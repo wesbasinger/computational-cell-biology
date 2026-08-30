@@ -7,6 +7,7 @@ from cell_sim.analysis import (
     final_displacements,
     mean_displacement,
     mean_squared_displacement,
+    mean_squared_displacement_by_step,
 )
 from cell_sim.models import SimulationMetadata, SimulationResult
 
@@ -49,6 +50,12 @@ def test_mean_squared_displacement(result: SimulationResult) -> None:
     assert mean_squared_displacement(result) == 12.5
 
 
+def test_mean_squared_displacement_by_step_includes_the_initial_timepoint(
+    result: SimulationResult,
+) -> None:
+    assert mean_squared_displacement_by_step(result) == (0.0, 12.5)
+
+
 def test_analysis_rejects_results_without_trajectories() -> None:
     metadata = SimulationMetadata(
         width=10.0,
@@ -63,3 +70,22 @@ def test_analysis_rejects_results_without_trajectories() -> None:
 
     with pytest.raises(ValueError, match="without trajectories"):
         final_displacements(result)
+
+
+def test_msd_by_step_rejects_uneven_trajectories() -> None:
+    metadata = SimulationMetadata(
+        width=10.0,
+        height=10.0,
+        timestep=0.1,
+        steps=1,
+        noise_scale=0.5,
+        random_seed=42,
+        boundary_policy="reflecting",
+    )
+    result = SimulationResult(
+        trajectories={0: ((0.0, 0.0),), 1: ((0.0, 0.0), (1.0, 1.0))},
+        metadata=metadata,
+    )
+
+    with pytest.raises(ValueError, match="same number"):
+        mean_squared_displacement_by_step(result)

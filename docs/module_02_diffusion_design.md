@@ -62,6 +62,20 @@ Run these comparisons with explicit commands, seeds, and outputs recorded:
 3. **Timestep refinement:** Hold total elapsed time and $D$ fixed while changing timestep and step count together. Compare aggregate MSD behavior, not individual trajectories.
 4. **Bounded domain:** Repeat an otherwise matching run with reflecting boundaries. Observe how finite boundaries alter long-time spreading.
 
+### Reproducible Commands
+
+All commands below use seed `42` and write a distinct figure under `data/module_02/`.
+
+```powershell
+python experiments/module_02/run_diffusion_experiment.py --particles 10000 --steps 500 --width 1000 --height 1000 --timestep 0.1 --diffusion-coefficient 1.0 --boundary-policy none --seed 42 --output data/module_02/msd_growth.png
+python experiments/module_02/run_diffusion_experiment.py --particles 10000 --steps 500 --width 1000 --height 1000 --timestep 0.1 --diffusion-coefficient 0.25 --boundary-policy none --seed 42 --output data/module_02/msd_d025.png
+python experiments/module_02/run_diffusion_experiment.py --particles 10000 --steps 500 --width 1000 --height 1000 --timestep 0.1 --diffusion-coefficient 2.0 --boundary-policy none --seed 42 --output data/module_02/msd_d2.png
+python experiments/module_02/run_diffusion_experiment.py --particles 10000 --steps 250 --width 1000 --height 1000 --timestep 0.2 --diffusion-coefficient 1.0 --boundary-policy none --seed 42 --output data/module_02/msd_timestep_02.png
+python experiments/module_02/run_diffusion_experiment.py --particles 10000 --steps 500 --width 1000 --height 1000 --timestep 0.1 --diffusion-coefficient 1.0 --boundary-policy reflecting --seed 42 --output data/module_02/msd_reflecting.png
+```
+
+The reported relative error compares one finite random ensemble with the unbounded $4Dt$ expectation; it is not an error estimate for a physical cell. Compare the theory line only for `--boundary-policy none`. Reflecting boundaries keep particles in the domain, so their long-time MSD is expected to fall below the unbounded line.
+
 ## Acceptance Criteria
 
 - [ ] A diffusion-configured simulation derives its motion scale from $D$ and $\Delta t$.

@@ -1,6 +1,7 @@
 """Core construction and state management for particle simulations."""
 
 from collections.abc import Sequence
+from math import sqrt
 import random
 from typing import Literal
 
@@ -50,6 +51,36 @@ class Simulation:
         }
         self.steps = 0
 
+    @classmethod
+    def for_diffusion(
+        cls,
+        *,
+        width: float,
+        height: float,
+        particle_count: int,
+        timestep: float,
+        diffusion_coefficient: float,
+        random_seed: int | None = None,
+        initial_positions: Sequence[tuple[float, float]] | None = None,
+        boundary_policy: BoundaryPolicy = "reflecting",
+    ) -> "Simulation":
+        """Create a simulation with coordinate noise derived from diffusivity."""
+        if diffusion_coefficient < 0:
+            raise ValueError("Diffusion coefficient cannot be negative.")
+
+        simulation = cls(
+            width=width,
+            height=height,
+            particle_count=particle_count,
+            timestep=timestep,
+            noise_scale=sqrt(2 * diffusion_coefficient * timestep),
+            random_seed=random_seed,
+            initial_positions=initial_positions,
+            boundary_policy=boundary_policy,
+        )
+        simulation.diffusion_coefficient = diffusion_coefficient
+        return simulation
+
     def step(self) -> None:
         """Advance every particle by one independent Gaussian displacement."""
         for particle in self.particles:
@@ -78,6 +109,7 @@ class Simulation:
             noise_scale=self.noise_scale,
             random_seed=self.random_seed,
             boundary_policy=self.boundary_policy,
+            diffusion_coefficient=getattr(self, "diffusion_coefficient", None),
         )
         return SimulationResult(trajectories=self.trajectories, metadata=metadata)
 

@@ -25,6 +25,7 @@ class SimulationMetadata:
     noise_scale: float
     random_seed: int | None
     boundary_policy: str
+    diffusion_coefficient: float | None = None
 
 
 @dataclass(frozen=True)

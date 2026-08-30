@@ -3,6 +3,7 @@
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 
+from cell_sim.analysis import mean_squared_displacement_by_step
 from cell_sim.models import SimulationResult
 
 
@@ -21,4 +22,33 @@ def plot_trajectories(result: SimulationResult, *, axes: Axes | None = None) -> 
     axes.set_xlabel("x position")
     axes.set_ylabel("y position")
     axes.set_title("Particle trajectories")
+    return axes
+
+
+def plot_mean_squared_displacement(
+    result: SimulationResult, *, axes: Axes | None = None
+) -> Axes:
+    """Plot observed MSD and, for diffusion results, its unbounded $4Dt$ reference."""
+    if axes is None:
+        _, axes = plt.subplots()
+
+    elapsed_times = tuple(
+        step * result.metadata.timestep
+        for step in range(len(mean_squared_displacement_by_step(result)))
+    )
+    axes.plot(elapsed_times, mean_squared_displacement_by_step(result), label="Observed")
+
+    diffusion_coefficient = result.metadata.diffusion_coefficient
+    if diffusion_coefficient is not None:
+        axes.plot(
+            elapsed_times,
+            [4 * diffusion_coefficient * time for time in elapsed_times],
+            linestyle="--",
+            label="Theory: 4Dt",
+        )
+
+    axes.set_xlabel("Elapsed time")
+    axes.set_ylabel("Mean squared displacement")
+    axes.set_title("Mean squared displacement")
+    axes.legend()
     return axes

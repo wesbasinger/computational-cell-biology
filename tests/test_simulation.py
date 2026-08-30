@@ -1,7 +1,10 @@
 """Tests for simulation construction and initial state."""
 
+from math import sqrt
+
 import pytest
 
+from cell_sim.analysis import mean_squared_displacement
 from cell_sim.simulation import Simulation
 
 
@@ -82,6 +85,92 @@ def test_zero_noise_step_preserves_particle_positions() -> None:
     simulation.step()
 
     assert simulation.trajectories[0] == [(5.0, 3.0), (5.0, 3.0)]
+
+
+def test_diffusion_factory_derives_coordinate_noise_scale_and_metadata() -> None:
+    simulation = Simulation.for_diffusion(
+        width=10.0,
+        height=6.0,
+        particle_count=2,
+        timestep=0.25,
+        diffusion_coefficient=0.8,
+        random_seed=42,
+        boundary_policy="none",
+    )
+
+    assert simulation.noise_scale == sqrt(2 * 0.8 * 0.25)
+    assert simulation.result().metadata.diffusion_coefficient == 0.8
+
+
+def test_diffusion_factory_rejects_negative_diffusion_coefficient() -> None:
+    with pytest.raises(ValueError, match="Diffusion coefficient"):
+        Simulation.for_diffusion(
+            width=10.0,
+            height=6.0,
+            particle_count=1,
+            timestep=0.1,
+            diffusion_coefficient=-0.1,
+        )
+
+
+def test_zero_diffusion_coefficient_produces_stationary_particles() -> None:
+    simulation = Simulation.for_diffusion(
+        width=10.0,
+        height=6.0,
+        particle_count=2,
+        timestep=0.1,
+        diffusion_coefficient=0.0,
+        random_seed=42,
+    )
+
+    simulation.run(5)
+
+    assert all(
+        trajectory == [(5.0, 3.0)] * 6
+        for trajectory in simulation.trajectories.values()
+    )
+
+
+def test_matching_seed_and_initial_state_reproduce_diffusion_trajectories() -> None:
+    parameters = {
+        "width": 10.0,
+        "height": 6.0,
+        "particle_count": 2,
+        "timestep": 0.1,
+        "diffusion_coefficient": 0.8,
+        "random_seed": 42,
+        "initial_positions": ((1.0, 1.0), (2.0, 2.0)),
+        "boundary_policy": "none",
+    }
+    first_simulation = Simulation.for_diffusion(**parameters)
+    second_simulation = Simulation.for_diffusion(**parameters)
+
+    first_simulation.run(5)
+    second_simulation.run(5)
+
+    assert first_simulation.trajectories == second_simulation.trajectories
+
+
+def test_unbounded_diffusion_ensemble_msd_matches_theoretical_value() -> None:
+    diffusion_coefficient = 0.8
+    timestep = 0.1
+    steps = 200
+    simulation = Simulation.for_diffusion(
+        width=1_000.0,
+        height=1_000.0,
+        particle_count=10_000,
+        timestep=timestep,
+        diffusion_coefficient=diffusion_coefficient,
+        random_seed=42,
+        boundary_policy="none",
+    )
+
+    simulation.run(steps)
+
+    expected_msd = 4 * diffusion_coefficient * timestep * steps
+    assert mean_squared_displacement(simulation.result()) == pytest.approx(
+        expected_msd, rel=0.05
+    )
 
 
 def test_reflecting_boundary_keeps_particles_inside_the_domain() -> None:
