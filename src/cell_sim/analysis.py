@@ -3,7 +3,7 @@
 from math import hypot
 from statistics import fmean, pvariance
 
-from cell_sim.models import SimulationResult
+from cell_sim.models import BindingResult, BindingStateCounts, SimulationResult
 
 
 def final_displacements(result: SimulationResult) -> tuple[float, ...]:
@@ -55,4 +55,25 @@ def mean_squared_displacement_by_step(result: SimulationResult) -> tuple[float, 
             for x, y in (trajectory[step],)
         )
         for step in range(step_count)
+    )
+
+
+def molecular_state_counts_by_step(
+    result: BindingResult,
+) -> tuple[BindingStateCounts, ...]:
+    """Return immutable free-$A$, free-$B$, and bound-$AB$ counts by timestep."""
+    expected_count = result.metadata.steps + 1
+    if len(result.state_counts) != expected_count:
+        raise ValueError("State counts must include one entry for every timepoint.")
+    return result.state_counts
+
+
+def bound_fraction_by_step(result: BindingResult) -> tuple[float, ...]:
+    """Return the fraction of the limiting species present in $AB$ complexes."""
+    limiting_count = min(result.metadata.a_count, result.metadata.b_count)
+    if limiting_count == 0:
+        raise ValueError("Cannot calculate a bound fraction without both species.")
+    return tuple(
+        counts.bound_complexes / limiting_count
+        for counts in molecular_state_counts_by_step(result)
     )

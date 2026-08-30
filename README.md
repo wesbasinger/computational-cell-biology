@@ -26,6 +26,10 @@ $$
 
 Module 2 measures the observed MSD across simulated particles and compares it with that idealized prediction. Reflecting boundaries are included to demonstrate how cellular-scale confinement changes long-term spreading.
 
+### Module 3: Molecular Encounters and Binding
+
+Two diffusing molecule species can form one-to-one $AB$ complexes when they enter a configured encounter radius. Binding and dissociation are configurable per-timestep probabilities, allowing experiments with diffusion-only controls, irreversible binding, and reversible binding. The model records free-$A$, free-$B$, and bound-$AB$ populations over time.
+
 ## Run the Diffusion Experiment
 
 From the repository root, activate the virtual environment and run:
@@ -35,6 +39,14 @@ python experiments/module_02/run_diffusion_experiment.py --particles 10000 --ste
 ```
 
 The command writes an MSD plot to `data/module_02/` and reports the observed final MSD alongside the unbounded $4Dt$ expectation. Additional reproducible comparisons are documented in [docs/module_02_diffusion_design.md](docs/module_02_diffusion_design.md).
+
+Run the default Module 3 binding experiment with:
+
+```powershell
+python experiments/module_03/run_binding_experiment.py --output data/module_03/binding_states.png
+```
+
+The command writes a molecular-state population plot and reports the final free and bound counts. The model and its reproducible comparisons are documented in [docs/module_03_encounters_and_binding_design.md](docs/module_03_encounters_and_binding_design.md).
 
 ## Setup and Verification
 

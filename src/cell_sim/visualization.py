@@ -3,8 +3,11 @@
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 
-from cell_sim.analysis import mean_squared_displacement_by_step
-from cell_sim.models import SimulationResult
+from cell_sim.analysis import (
+    mean_squared_displacement_by_step,
+    molecular_state_counts_by_step,
+)
+from cell_sim.models import BindingResult, SimulationResult
 
 
 def plot_trajectories(result: SimulationResult, *, axes: Axes | None = None) -> Axes:
@@ -50,5 +53,28 @@ def plot_mean_squared_displacement(
     axes.set_xlabel("Elapsed time")
     axes.set_ylabel("Mean squared displacement")
     axes.set_title("Mean squared displacement")
+    axes.legend()
+    return axes
+
+
+def plot_molecular_state_counts(
+    result: BindingResult, *, axes: Axes | None = None
+) -> Axes:
+    """Plot free molecule and bound-complex populations across elapsed time."""
+    if axes is None:
+        _, axes = plt.subplots()
+
+    state_counts = molecular_state_counts_by_step(result)
+    elapsed_times = tuple(step * result.metadata.timestep for step in range(len(state_counts)))
+    axes.plot(elapsed_times, [counts.free_a for counts in state_counts], label="_nolegend_")
+    axes.plot(elapsed_times, [counts.free_b for counts in state_counts], label="Free B")
+    axes.plot(
+        elapsed_times,
+        [counts.bound_complexes for counts in state_counts],
+        label="Bound AB",
+    )
+    axes.set_xlabel("Elapsed time")
+    axes.set_ylabel("Molecule count")
+    axes.set_title("Molecular binding states")
     axes.legend()
     return axes

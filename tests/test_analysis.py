@@ -3,13 +3,21 @@
 import pytest
 
 from cell_sim.analysis import (
+    bound_fraction_by_step,
     displacement_variance,
     final_displacements,
     mean_displacement,
     mean_squared_displacement,
     mean_squared_displacement_by_step,
+    molecular_state_counts_by_step,
 )
-from cell_sim.models import SimulationMetadata, SimulationResult
+from cell_sim.models import (
+    BindingMetadata,
+    BindingResult,
+    BindingStateCounts,
+    SimulationMetadata,
+    SimulationResult,
+)
 
 
 @pytest.fixture
@@ -89,3 +97,39 @@ def test_msd_by_step_rejects_uneven_trajectories() -> None:
 
     with pytest.raises(ValueError, match="same number"):
         mean_squared_displacement_by_step(result)
+
+
+@pytest.fixture
+def binding_result() -> BindingResult:
+    metadata = BindingMetadata(
+        width=10.0,
+        height=10.0,
+        timestep=0.5,
+        steps=2,
+        a_diffusion_coefficient=1.0,
+        b_diffusion_coefficient=1.0,
+        complex_diffusion_coefficient=0.5,
+        encounter_radius=1.0,
+        binding_probability=0.5,
+        dissociation_probability=0.1,
+        random_seed=42,
+        boundary_policy="none",
+        a_count=4,
+        b_count=2,
+    )
+    return BindingResult(
+        trajectories={},
+        state_counts=(
+            BindingStateCounts(4, 2, 0),
+            BindingStateCounts(3, 1, 1),
+            BindingStateCounts(2, 0, 2),
+        ),
+        metadata=metadata,
+    )
+
+
+def test_binding_state_analysis_returns_counts_and_bound_fraction(
+    binding_result: BindingResult,
+) -> None:
+    assert molecular_state_counts_by_step(binding_result) == binding_result.state_counts
+    assert bound_fraction_by_step(binding_result) == (0.0, 0.5, 1.0)
